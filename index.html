@@ -690,10 +690,16 @@ let fallbackT0=performance.now();
 const nowtag=document.getElementById("nowtag");
 
 function refreshButtons(){
+  var paused = !!window._userPaused;
   document.querySelectorAll('.card').forEach(c=>{
     const b=c.querySelector('.pbtn');
     if(!b) return;
-    b.textContent = c.classList.contains('on') ? '⏸ 停止' : '▶ 起舞';
+    if(c.classList.contains('on')){
+      // 当前选中的歌：区分播放中/暂停中
+      b.textContent = paused ? '\u25b6 \u7ee7\u7eed' : '\u23f8 \u6682\u505c';   // ▶ 继续 / ⏸ 暂停
+    } else {
+      b.textContent = '\u25b6 \u8d77\u821e';   // ▶ 起舞
+    }
   });
 }
 var lastSong=null;
@@ -891,8 +897,8 @@ function playSong(song,cardEl){
       navigator.mediaSession.metadata=new MediaMetadata(_lastMeta);
       navigator.mediaSession.playbackState='playing';
       var handlers=[
-        ['play',function(){ try{ window._userPaused=false; waResume(); _reassertSession('playing'); }catch(e){} }],
-        ['pause',function(){ try{ window._userPaused=true; waPause(); if(_isIOS){ try{ navigator.mediaSession.playbackState='paused'; }catch(e){} } else { _reassertSession('paused'); setTimeout(function(){ _reassertSession('paused'); },350); setTimeout(function(){ _reassertSession('paused'); },1200); } }catch(e){} }],
+        ['play',function(){ try{ window._userPaused=false; waResume(); try{refreshButtons();}catch(_){} _reassertSession('playing'); }catch(e){} }],
+        ['pause',function(){ try{ window._userPaused=true; waPause(); try{refreshButtons();}catch(_){} if(_isIOS){ try{ navigator.mediaSession.playbackState='paused'; }catch(e){} } else { _reassertSession('paused'); setTimeout(function(){ _reassertSession('paused'); },350); setTimeout(function(){ _reassertSession('paused'); },1200); } }catch(e){} }],
         ['nexttrack',function(){ try{playByIndex(curIndex()+1);}catch(e){} }],
         ['previoustrack',function(){ try{playByIndex(curIndex()-1);}catch(e){} }],
         ['stop',function(){ try{stopAll();}catch(e){} }]
@@ -948,6 +954,7 @@ function togglePlayPause(){
     window._userPaused=true;
     waPause();
     nowtag.textContent="\u23f8 "+(current.title||"");   // ⏸ 标识暂停态
+    refreshButtons();   // 同步卡片按钮：当前歌显示"▶ 继续"
     try{ if('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; }catch(e){}
     return;
   }
@@ -956,6 +963,7 @@ function togglePlayPause(){
     window._userPaused=false;
     waResume();
     nowtag.textContent="\u266a "+(current.title||"");   // ♪ 恢复播放态
+    refreshButtons();   // 同步卡片按钮：当前歌显示"⏸ 暂停"
     try{ if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; }catch(e){}
     return;
   }
