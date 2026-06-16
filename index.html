@@ -866,15 +866,21 @@ function _rgba(h,a){ var c=_hex(h); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+
 
 function playSong(song,cardEl){
   if(current && current.id===song.id){
-    // 点的是当前歌：暂停中→继续播放；播放中→停止（toggle 语义，与点舞台一致）
+    // 点的是当前歌：toggle 暂停/继续（与点舞台一致）。注意是【暂停】不是【停止】，保留 current 才能续播
     if(window._userPaused){
+      // 暂停中→继续播放（从暂停处续）
       window._userPaused=false;
       waResume();
       nowtag.textContent="\u266a "+(song.title||"");
       refreshButtons();
       try{ if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; }catch(e){}
     } else {
-      stopAll();
+      // 播放中→暂停（不是 stopAll！stopAll 会清 current 导致再点从头播）
+      window._userPaused=true;
+      waPause();
+      nowtag.textContent="\u23f8 "+(song.title||"");
+      refreshButtons();
+      try{ if('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; }catch(e){}
     }
     return;
   }
