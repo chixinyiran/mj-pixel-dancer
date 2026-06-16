@@ -14,7 +14,7 @@
 
 ## 🚀 在线体验
 
-打开 [GitHub Pages 链接](#) 即可游玩（建议用 Chrome 以获得最佳后台播放体验）。
+打开 <https://chixinyiran.github.io/mj-pixel-dancer/> 即可游玩（建议用 Chrome 以获得最佳后台播放体验）。
 
 ## ⌨️ 快捷键
 
