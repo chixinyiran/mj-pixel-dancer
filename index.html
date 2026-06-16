@@ -865,7 +865,19 @@ function _hex(h){ h=h.replace('#',''); if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[
 function _rgba(h,a){ var c=_hex(h); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; }
 
 function playSong(song,cardEl){
-  if(current && current.id===song.id){ stopAll(); return; }
+  if(current && current.id===song.id){
+    // 点的是当前歌：暂停中→继续播放；播放中→停止（toggle 语义，与点舞台一致）
+    if(window._userPaused){
+      window._userPaused=false;
+      waResume();
+      nowtag.textContent="\u266a "+(song.title||"");
+      refreshButtons();
+      try{ if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; }catch(e){}
+    } else {
+      stopAll();
+    }
+    return;
+  }
   window._userPaused=false;
   window._lastEnded=Date.now();   // 切歌时刻记为现在：挡住切歌后 600ms 内残留/杂散 ended，不影响几分钟后正常结束
   // 切歌前置空上一个 source 的 onended，避免误触发连播
