@@ -338,14 +338,27 @@ function evalRoutine(beats,rIdx){
 
 /* 背景预渲染 */
 const BG=document.createElement("canvas");
+let TWINKLE=[];   /* [STAR] 闪烁星数据(每帧动态画,移植自 MOONWALKER 加强版) */
 function buildBG(){
   BG.width=Math.round(W*RES);BG.height=Math.round(H*RES);
   const b=BG.getContext("2d");b.setTransform(RES,0,0,RES,0,0);
   b.fillStyle="#000";b.fillRect(0,0,W,H);
   let s=7;function rnd(){s=(s*16807)%2147483647;return s/2147483647;}
-  for(let i=0;i<95;i++){
+  for(let i=0;i<75;i++){   /* [STAR] 静态星 95→75, 余下做闪烁星 */
     b.fillStyle=rnd()<.22?"#fff":(rnd()<.5?"#a8a8a8":"#585858");
     b.fillRect((rnd()*W)|0,(rnd()*118)|0,1,1);
+  }
+  /* [STAR] 生成 32 颗闪烁星: 大幅度+快频率, 眨眼明显 */
+  TWINKLE=[];
+  for(let ti=0;ti<32;ti++){
+    TWINKLE.push({
+      x:(rnd()*W)|0, y:(rnd()*112)|0,
+      base: rnd()<.45?0.95:0.5,
+      amp: 0.55+rnd()*0.75,
+      speed: 1.2+rnd()*3.8,
+      phase: rnd()*6.2832,
+      bigChance: rnd()
+    });
   }
   b.fillStyle="#a8a8a8";b.beginPath();b.arc(278,30,11,0,6.2832);b.fill();
   b.fillStyle="#000";b.beginPath();b.arc(273,26,10,0,6.2832);b.fill();
@@ -1163,6 +1176,30 @@ function frame(ts){
   X.setTransform(1,0,0,1,0,0);
   X.drawImage(BG,0,0);
   X.setTransform(RES,0,0,RES,0,0);
+
+  /* [STAR] 闪烁星: 每帧 sin 波亮度, 强对比眨眼(移植自 MOONWALKER) */
+  if(TWINKLE && TWINKLE.length){
+    const tNow=(typeof performance!=='undefined'?performance.now():Date.now())*0.001;
+    for(let ti=0;ti<TWINKLE.length;ti++){
+      const st=TWINKLE[ti];
+      let v=st.base+st.amp*Math.sin(tNow*st.speed+st.phase);
+      v=Math.max(0,Math.min(1,v));
+      if(v<0.18) continue;
+      const a=(v*v).toFixed(3);
+      X.fillStyle=v>0.7?"rgba(255,255,255,"+a+")":(v>0.4?"rgba(225,225,225,"+a+")":"rgba(150,150,150,"+a+")");
+      X.fillRect(st.x,st.y,1,1);
+      if(v>0.8 && st.bigChance>0.45){
+        X.fillStyle="rgba(255,255,255,"+(a*0.7).toFixed(3)+")";
+        X.fillRect(st.x-1,st.y,1,1); X.fillRect(st.x+1,st.y,1,1);
+        X.fillRect(st.x,st.y-1,1,1); X.fillRect(st.x,st.y+1,1,1);
+        if(v>0.95){
+          X.fillStyle="rgba(255,255,255,"+(a*0.4).toFixed(3)+")";
+          X.fillRect(st.x-1,st.y-1,1,1); X.fillRect(st.x+1,st.y-1,1,1);
+          X.fillRect(st.x-1,st.y+1,1,1); X.fillRect(st.x+1,st.y+1,1,1);
+        }
+      }
+    }
+  }
 
   // 聚光灯
   X.fillStyle="rgba(255,255,255,.30)";
